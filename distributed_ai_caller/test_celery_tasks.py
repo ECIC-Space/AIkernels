@@ -16,9 +16,9 @@ class TestCeleryTasks(unittest.TestCase):
     @patch('celery_config.call_claude_api')
     def test_call_ai_api_claude(self, mock_claude):
         mock_claude.return_value = "Claude response"
-        result = call_ai_api("claude-2", "System prompt", "User request")
+        result = call_ai_api("claude-3-haiku-20240307", "System prompt", "User request")
         self.assertEqual(result, "Claude response")
-        mock_claude.assert_called_once_with("claude-2", "System prompt", "User request")
+        mock_claude.assert_called_once_with("claude-3-haiku-20240307", "System prompt", "User request")
 
     def test_call_ai_api_unsupported_model(self):
         with self.assertRaises(ValueError):
@@ -40,7 +40,7 @@ class TestCeleryTasks(unittest.TestCase):
         mock_response.completion = 'Claude response'
         mock_create.return_value = mock_response
 
-        result = call_claude_api("claude-2", "System prompt", "User request")
+        result = call_claude_api("claude-3-haiku-20240307", "System prompt", "User request")
         self.assertEqual(result, "Claude response")
         mock_create.assert_called_once()
 

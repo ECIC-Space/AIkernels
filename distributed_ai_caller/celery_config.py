@@ -6,6 +6,7 @@ import os
 import anthropic
 from celery import Celery
 from openai import OpenAI
+from image_utils import image_to_base64
 
 # 创建Celery应用
 app = Celery('ai_tasks', broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')
@@ -64,6 +65,25 @@ def call_ai_api(self, model_name, system_prompt, user_request):
             result = call_claude_api(model_name, system_prompt, user_request)
         else:
             raise ValueError(f"Unsupported model: {model_name}")
+        print(f"任务 {self.request.id} 成功完成")
+        return result
+    except Exception as e:
+        error_msg = f"call_ai_api 错误: {str(e)}"
+        print(error_msg, file=sys.stderr)
+        self.update_state(state='FAILURE', meta={'error': error_msg})
+        raise
+
+
+@app.task(name='ai_tasks.call_ai_api', bind=True)
+def call_ai_api(self, model_name, system_prompt, user_request, image_paths=None):
+    print(f"Task {self.request.id} started: model={model_name}")
+    try:
+        if "gpt" in model_name.lower():
+            result = call_openai_api(model_name, system_prompt, user_request, image_paths)
+        elif "claude" in model_name.lower():
+            result = call_claude_api(model_name, system_prompt, user_request, image_paths)
+        else:
+            raise ValueError(f"Unsupported model: {model_name}")
         print(f"Task {self.request.id} completed successfully")
         return result
     except Exception as e:
@@ -72,45 +92,78 @@ def call_ai_api(self, model_name, system_prompt, user_request):
         self.update_state(state='FAILURE', meta={'error': error_msg})
         raise
 
-
-def call_openai_api(model_name, system_prompt, user_request):
+def call_openai_api(model_name, system_prompt, user_request, image_paths=None):
     print("开始调用OpenAI API")
     try:
+        messages = [
+            {"role": "system", "content": system_prompt},
+        ]
+
+        if image_paths:
+            for image_path in image_paths:
+                base64_image = image_to_base64(image_path)
+                messages.append({
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}"
+                            }
+                        }
+                    ]
+                })
+
+        messages.append({"role": "user", "content": user_request})
+
         completion = openai_client.chat.completions.create(
             model=model_name,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_request}
-            ]
+            messages=messages
         )
         result = completion.choices[0].message.content
-        print(f"OpenAI API调用完成，结果：{result}")
+        print(f"OpenAI API调用完成，结果： {result}")
         return result
     except Exception as e:
-        print(f"OpenAI API调用出错：{str(e)}")
+        print(f"OpenAI API调用失败，结果： {str(e)}")
         raise
 
-
-def call_claude_api(model_name, system_prompt, user_request):
-    print("开始调用Claude API")
+def call_claude_api(model_name, system_prompt, user_request, image_paths=None):
+    print("开始调用Anthropic API")
     try:
+        messages = []
+
+        if image_paths:
+            for i, image_path in enumerate(image_paths, 1):
+                base64_image = image_to_base64(image_path)
+                messages.extend([
+                    {"type": "text", "text": f"Image {i}:"},
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/jpeg",
+                            "data": base64_image,
+                        },
+                    }
+                ])
+
+        messages.append({"type": "text", "text": user_request})
+
         message = anthropic_client.messages.create(
             model=model_name,
             max_tokens=1024,
-            system=system_prompt,  # 将系统提示作为单独的参数传递
-            messages=[
-                {"role": "user", "content": user_request}
-            ]
+            system=system_prompt,
+            messages=[{"role": "user", "content": messages}]
         )
         result = message.content[0].text
-        print(f"Claude API调用完成，结果：{result}")
+        print(f"Anthropic API调用完成，结果： {result}")
         return result
     except anthropic.APIError as e:
-        error_msg = f"Claude API调用出错：{str(e)}"
+        error_msg = f"Anthropic API调用错误： {str(e)}"
         print(error_msg, file=sys.stderr)
         raise ValueError(error_msg)
     except Exception as e:
-        error_msg = f"Claude API调用出错：{str(e)}"
+        error_msg = f"Anthropic API调用错误： {str(e)}"
         print(error_msg, file=sys.stderr)
         raise ValueError(error_msg)
 
