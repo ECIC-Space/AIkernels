@@ -1,6 +1,6 @@
 # master.py
 from flask import Flask, request, jsonify
-from celery_config import call_ai_api
+from celery_config import call_ai_api, call_ai_api_img
 from celery.result import AsyncResult
 import logging
 
@@ -14,9 +14,15 @@ def call_ai():
     model_name = data.get('model_name')
     system_prompt = data.get('system_prompt')
     user_request = data.get('user_request')
-
+    image_paths = data.get('image_paths')
     app.logger.info(f"Received request for model: {model_name}")
-    task = call_ai_api.delay(model_name, system_prompt, user_request)
+
+    if image_paths:
+        app.logger.info(f"Received image paths: {image_paths}")
+        task = call_ai_api_img.delay(model_name, system_prompt, user_request, image_paths)
+    else:
+        task = call_ai_api.delay(model_name, system_prompt, user_request)
+
     app.logger.info(f"Task created with id: {task.id}")
     return jsonify({"task_id": task.id}), 202
 
@@ -24,7 +30,11 @@ def call_ai():
 @app.route('/get_result/<task_id>', methods=['GET'])
 def get_result(task_id):
     app.logger.info(f"Checking result for task: {task_id}")
+    # Try both task types
     task = AsyncResult(task_id, app=call_ai_api.app)
+    if not task.ready():
+        task = AsyncResult(task_id, app=call_ai_api_img.app)
+
     if task.ready():
         app.logger.info(f"Task {task_id} is ready")
         if task.successful():

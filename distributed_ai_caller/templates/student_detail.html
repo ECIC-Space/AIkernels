@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生 {{ student_id }} 的批卷结果</title>
+</head>
+<body>
+    <h1>学生 {{ student_id }} 的批卷结果</h1>
+    <h2>题目结果:</h2>
+    <ul>
+    {% for question, result in results.items() %}
+        <li>题目 {{ question }}: {{ result }}</li>
+    {% endfor %}
+    </ul>
+    <h2>试卷图片:</h2>
+    {% for image in image_files %}
+        <img src="{{ url_for('static', filename='output/' + folder + '/' + image) }}" alt="{{ image }}" style="max-width: 100%;">
+    {% endfor %}
+    <p><a href="{{ url_for('index') }}">返回总览</a></p>
+</body>
+</html>

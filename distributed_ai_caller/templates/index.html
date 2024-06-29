@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生批卷结果总览</title>
+</head>
+<body>
+    <h1>学生批卷结果总览</h1>
+    <ul>
+    {% for student_id in student_ids %}
+        <li><a href="{{ url_for('student_detail', student_id=student_id) }}">学生 {{ student_id }}</a></li>
+    {% endfor %}
+    </ul>
+</body>
+</html>

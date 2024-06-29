@@ -54,29 +54,29 @@ def main():
         # print("\n" + "=" * 50 + "\n")
 
         # 示例2：调用Anthropic的Claude模型
-        print("调用Anthropic的Claude模型:")
-        task_id = call_ai_api(
-            "claude-3-haiku-20240307",
-            "你是一个专业的科技评论家。",
-            "请评论一下大型语言模型对社会的潜在影响。"
-        )
-        task_id2 = call_ai_api(
-            "claude-3-haiku-20240307",
-            "你是一个专业的键政乐子人。",
-            "请评论一下大型语言模型对社会的潜在影响。"
-        )
+        # print("调用Anthropic的Claude模型:")
+        # task_id = call_ai_api(
+        #     "claude-3-haiku-20240307",
+        #     "你是一个专业的科技评论家。",
+        #     "请评论一下大型语言模型对社会的潜在影响。"
+        # )
+        # task_id2 = call_ai_api(
+        #     "claude-3-haiku-20240307",
+        #     "你是一个专业的键政乐子人。",
+        #     "请评论一下大型语言模型对社会的潜在影响。"
+        # )
         print("调用Anthropic的Claude模型的视觉任务:")
         task_id3 = call_ai_api(
             "claude-3-haiku-20240307",
-            "你是一个有用的助手，能够比较图片。",
-            "对比这两张图片。",
-            image_paths=["path/to/first/image.jpg", "path/to/second/image.jpg"]
+            "你是一个有用的助手，能够描述图片。",
+            "描述这张图片。",
+            image_paths=[r"""C:\Users\samxi\OneDrive\桌面\项目\AIkernels\distributed_ai_caller\output\1.jpg\corrected_column_2.jpg"""]
         )
-        result = get_result(task_id)
-        print(result)
-        print("------------------------")
-        result = get_result(task_id2)
-        print(result)
+        # result = get_result(task_id)
+        # print(result)
+        # print("------------------------")
+        # result = get_result(task_id2)
+        # print(result)
         print("------------------------")
         result = get_result(task_id3)
         print(result)
